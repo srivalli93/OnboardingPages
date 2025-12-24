@@ -7,54 +7,69 @@
 
 import UIKit
 
-class ViewController: UIViewController {
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view.
+class TestViewController: OnboardingDelegate {
+        func setupAndPresentTutorialsIfNecessary() {
+                let pages = [
+                    OnboardingPageConfig(id: "title1", components: [
+                        .title("test"),
+                        .image(UIImage(systemSymbol: .car)),
+                        .body("test"),
+                        .checkbox(title: "test", identifier: "test", initialState: true),
+                        .primaryButton("test")
+                    ]),
+                    OnboardingPageConfig(id: "test1", components: [
+                        .title("test1"),
+                        .image(UIImage(systemSymbol: .speedometer)),
+                        .radioButtonGroup(title: "Select Unit", options: ["test1", "test1"], identifier: "test1"),
+                        .primaryButton("test1")
+                    ]),
+                    OnboardingPageConfig(id: "test2", components: [
+                        .title("test2"),
+                        .image(UIImage(systemSymbol: .mappinAndEllipse)),
+                        .body("test2"),
+                        .primaryButton("test2")
+                    ], requiresLocationPermission: true)
+                ]
 
+                let onboardingVC = BaseOnboardingViewController(pages: pages, delegate: self)
+                let nav = UINavigationController(rootViewController: onboardingVC)
+                nav.modalPresentationStyle = .pageSheet
+                nav.isModalInPresentation = true
+                
+                self.present(nav, animated: true)
+                self.showTutorials = false
+            }
 
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        let pages: [OnboardingPageModel] = [
-            OnboardingPageModel(
-                id: "welcome",
-                components: [
-                    .title("Welcome"),
-                    .body("Let’s get started"),
-                    .submitButton(title: "Continue")
-                ],
-                requiresLocationPermission: false
-            ),
-            OnboardingPageModel(
-                id: "location",
-                components: [
-                    .title("Enable Location"),
-                    .body("We use location to improve results"),
-                    .submitButton(title: "Allow Location")
-                ],
-                requiresLocationPermission: true
-            )
-        ]
+            // MARK: - OnboardingDelegate Implementation
 
-        let onboardingVC = OnboardingPageViewController(pages: pages)
+            func onboardingRequestLocation() {
+                // Hand-off: Main controller handles actual system prompt
+                self.requestLocation()
+                // Assuming your requestLocation handles the prompt, we dismiss the onboarding
+                onboardingDidFinish()
+            }
 
-        // MARK: - Sheet configuration
-        onboardingVC.modalPresentationStyle = .pageSheet
+            func onboardingDidUpdateValue(identifier: String, value: Any) {
+                switch identifier {
+                case "test2":
+                    if let index = value as? Int {
+                        let unit = index == 0 ? L10n.mtMiles : L10n.mtKilometers
+                        self.updateUnit(to: unit)
+                    }
+                case "test1":
+                    if let dontShow = value as? Bool {
+                        // Defaults.standard.hideSafetyTutorial = dontShow
+                    }
+                default: break
+                }
+            }
 
-        if let sheet = onboardingVC.sheetPresentationController {
-            sheet.detents = [
-                .large()   // Full-height onboarding (recommended)
-                // .medium() // Optional if you want partial height
-            ]
-            sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 24
-            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+            func onboardingDidFinish() {
+                self.dismiss(animated: true) { [weak self] in
+                    guard let self = self else { return }
+//                    self.enableLocation()
+//                    self.detetminewarningalert()
+                }
+            }
         }
-
-        present(onboardingVC, animated: true)
-    }
-    
-}
-
